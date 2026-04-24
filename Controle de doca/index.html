@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>Gestão e Controle</title>
+    <meta name="theme-color" content="#0f172a"> 
+    <meta name="apple-mobile-web-app-capable" content="yes"> 
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+    <meta name="apple-mobile-web-app-title" content="Gestão Doca"> 
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚛</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <script>
+        const __libs = {
+            chart: { src: 'https://cdn.jsdelivr.net/npm/chart.js', loaded: false },
+            jspdf: { src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', loaded: false },
+            html2canvas: { src: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', loaded: false },
+            autotable: { src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js', loaded: false }
+        };
+
+        async function loadLib(name) {
+            if (__libs[name].loaded) return Promise.resolve();
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = __libs[name].src;
+                script.onload = () => { __libs[name].loaded = true; resolve(); };
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+    </script>
+
+    <style>
+        html, body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+        #tab-chat, #chat-window, #chat-sidebar, #chat-messages-container { min-height: 0; }
+        ::selection { background-color: rgba(6, 182, 212, 0.5); color: white; }
+        .tab-button.active { color: #22d3ee; font-weight: 600; background-color: rgba(6, 182, 212, 0.1); }
+        #store-search-results::-webkit-scrollbar, #provider-store-search-results::-webkit-scrollbar, #collab-store-search-results::-webkit-scrollbar, #chat-messages-container::-webkit-scrollbar, #chat-contacts-list::-webkit-scrollbar { display: none; }
+        #store-search-results, #provider-store-search-results, #collab-store-search-results, #chat-messages-container, #chat-contacts-list { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Nova Barra de Rolagem Customizada para o Menu */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.5); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.8); }
+        .-webkit-overflow-scrolling-touch { -webkit-overflow-scrolling: touch; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .card, .tab-button, button, input, textarea, a, select { 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            transform-style: preserve-3d;
+            image-rendering: -webkit-optimize-contrast;
+        }
+        .card:hover { 
+            transform: translateY(-5px) scale(1.01); 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 15px rgba(6, 182, 212, 0.3); 
+            border-color: rgba(6, 182, 212, 0.5); 
+            /* Força renderização nítida em alguns browsers */
+            outline: 1px solid transparent;
+        }
+        .fade-in { 
+            animation: fadeIn 0.4s ease-out forwards; 
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            transform-style: preserve-3d;
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px) translateZ(0); } 
+            to { opacity: 1; transform: translateY(0) translateZ(0); } 
+        }
+        .loader { border: 5px solid rgba(255,255,255,0.2); border-top: 5px solid #06b6d4; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .aurora-background { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            z-index: 0; 
+            opacity: 0.3; 
+            pointer-events: none;
+        }
+        .aurora-background::before, .aurora-background::after { 
+            content: ''; 
+            position: absolute; 
+            width: 200vw; 
+            height: 200vh; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background-image: radial-gradient(circle at center, #06b6d4 0%, transparent 40%), radial-gradient(circle at center, #8b5cf6 0%, transparent 45%); 
+            mix-blend-mode: screen; 
+            animation: aurora 40s linear infinite; 
+            filter: blur(100px); 
+            will-change: transform;
+        }
+        .aurora-background::after { 
+            background-image: radial-gradient(circle at center, #3b82f6 0%, transparent 40%), radial-gradient(circle at center, #d946ef 0%, transparent 45%); 
+            animation-direction: reverse; 
+            animation-delay: -20s; 
+        }
+        @keyframes aurora { 
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        #qr-reader, #qr-reader-ronda { border-radius: 8px; overflow: hidden; border: 2px solid #334155; }
+        .status-border-green { border-left: 5px solid #22c55e; }
+        .status-border-yellow { border-left: 5px solid #facc15; }
+        .status-border-red { border-left: 5px solid #ef4444; }
+        .status-border-blue { border-left: 5px solid #3b82f6; }
+        .carousel-wrapper { overflow: hidden; }
+        .carousel-track { display: flex; transition: transform 0.5s ease-in-out; }
+        .carousel-item { flex: 0 0 100%; }
+        .toggle-checkbox:checked { right: 0; border-color: #06b6d4; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #06b6d4; }
+        select {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+          background-position: right 0.5rem center;
+          background-repeat: no-repeat;
+          background-size: 1.5em 1.5em;
+          padding-right: 2.5rem;
+          -webkit-appearance: none;
+               -moz-appearance: none;
+                    appearance: none;
+        }
+        /* Chat WhatsApp Style Patterns */
+        .chat-bg {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        
+        /* Role based visibility classes */
+        .admin-only { display: none; }
+        .lojista-only { display: none; }
+        
+        /* Timeline Rondas */
+        .timeline-item { position: relative; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .timeline-item::before { content: ''; position: absolute; left: 0.35rem; top: 0.5rem; bottom: -1rem; width: 2px; background-color: #334155; }
+        .timeline-item:last-child::before { display: none; }
+        .timeline-dot { position: absolute; left: 0; top: 0.3rem; width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid #0f172a; }
+        
+        /* Otimização de Tabelas Mobile */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+    <div class="aurora-background"></div>
+    <main class="relative z-10">
+        <div id="auth-container" class="flex items-center justify-center min-h-[100dvh]">
+            <div class="w-full max-w-md p-8 space-y-6 bg-slate-800/50 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl shadow-black/20 fade-in">
+                <div id="authStatusMessage" class="hidden p-4 mb-4 text-sm rounded-lg" role="alert"></div>
+                <div id="login-form-container">
+                    <h2 class="text-3xl font-bold text-center text-white">Bem-vindo(a)</h2>
+                    <form id="login-form" class="mt-6 space-y-4" onsubmit="handleLoginSubmit(event)">
+                        <div>
+                            <label for="login-email" class="text-sm font-medium text-slate-400">Email</label>
+                            <input id="login-email" type="email" required class="w-full p-3 mt-1 bg-slate-900/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-slate-200">
+                        </div>
+                        <div>
+                            <label for="login-password" class="text-sm font-medium text-slate-400">Senha</label>
+                            <input id="login-password" type="password" required class="w-full p-3 mt-1 bg-slate-900/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-slate-200">
+                        </div>
+                        <button type="submit" class="w-full py-3 text-white font-semibold bg-cyan-600 rounded-md hover:bg-cyan-500 shadow-lg shadow-cyan-500/20 transform hover:scale-105">Entrar</button>
+                    </form>
+                    <p class="mt-4 text-sm text-center text-slate-400">
+                        <a href="#" id="show-reset" class="font-semibold text-cyan-400 hover:text-cyan-300">Esqueceu a senha?</a>
+                    </p>
+                </div>
+                <div id="reset-form-container" class="hidden">
+                    <div class="relative flex items-center justify-center mb-2">
+                        <button type="button" id="back-arrow-reset" class="absolute left-0 p-2 -ml-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-full transition-colors" title="Voltar para o Login">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        </button>
+                        <h2 class="text-3xl font-bold text-center text-white">Recuperar Senha</h2>
+                    </div>
+                    <form id="reset-form" class="mt-6 space-y-4" onsubmit="handleResetSubmit(event)">
+                        <div>
+                            <label for="reset-email" class="text-sm font-medium text-slate-400">Email</label>
+                            <input id="reset-email" type="email" required class="w-full p-3 mt-1 bg-slate-900/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-slate-200">
+                        </div>
+                        <button type="submit" class="w-full py-3 text-white font-semibold bg-cyan-600 rounded-md hover:bg-cyan-500 shadow-lg shadow-cyan-500/20 transform hover:scale-105">Enviar Link</button>
+                    </form>
+                    <div class="mt-6 text-sm text-center text-slate-400">
+                        <button type="button" id="back-to-login" class="font-semibold text-cyan-400 hover:text-cyan-300">Voltar ao Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="main-app-container" class="hidden container mx-auto p-4 md:p-8 max-w-7xl pb-24">
+            <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"> 
+                <div class="w-full md:w-auto"> 
+                    <h1 id="app-main-title" class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Gestão e Controle</h1> 
+                    <p id="welcome-message" class="text-sm md:text-lg text-slate-400 mt-1">Gerenciamento de carga, descarga e serviços.</p> 
+                </div> 
+                
+                <div class="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto"> 
+                    <span id="user-role-badge"></span> 
+                    <button id="logout-btn" class="bg-red-600/50 text-white font-bold py-2 px-4 rounded-lg border border-red-500 hover:bg-red-600/80 transform hover:scale-105 flex-shrink-0">Sair</button> 
+                </div> 
+            </header> 
+            
+            <div class="relative mb-6 z-50">
+                <button id="menu-toggle-btn" class="relative flex items-center gap-2 bg-slate-800/50 p-3 border border-slate-700 rounded-lg shadow-sm text-slate-300 hover:bg-slate-700/50 hover:border-cyan-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"></path></svg>
+                    <span id="current-tab-name" class="font-medium text-white">Início</span>
+                    <span id="global-notification-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-lg border-2 border-slate-900 animate-pulse">!</span>
+                </button>
+                
+                <nav id="main-menu" class="hidden absolute left-0 mt-2 w-64 bg-slate-800 rounded-lg shadow-2xl border border-slate-700 overflow-y-auto max-h-[420px] custom-scrollbar z-50">
+                    <button id="tab-btn-inicio" data-roles="admin,coordenador,lojista,agente,supervisor_seguranca,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50" onclick="showTab('inicio')">Início</button>
+                    <button id="tab-btn-chat" data-roles="admin,coordenador,lojista" class="tab-button w-full text-left flex items-center py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('chat')">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        Mensagens
+                        <span id="menu-chat-badge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full"></span>
+                    </button>
+                    <button id="tab-btn-my-os" data-roles="lojista" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('my-os')">Ordens de Serviço</button>
+                    <button id="tab-btn-control" data-roles="admin,coordenador,agente,supervisor_seguranca" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('control')">Carga e Descarga</button>
+                    <button id="tab-btn-providers" data-roles="admin,coordenador,agente,supervisor_seguranca" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('providers')">Prestadores no Local</button>
+                    <button id="tab-btn-approve-os" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('approve-os')">Aprovação de OS</button>
+                    <button id="tab-btn-collaborators" data-roles="admin,coordenador,lojista" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('collaborators')">Colaboradores</button>
+                    <button id="tab-btn-qr-reader" data-roles="admin,coordenador,agente,supervisor_seguranca" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('qr-reader')">Leitor QR Code</button>
+                    <button id="tab-btn-rondas" data-roles="admin,coordenador,agente,supervisor_seguranca,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('rondas')">Rondas em Áreas</button>
+                    <button id="tab-btn-plantao" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('plantao')">Relatório de Plantão</button>
+                    <button id="tab-btn-emprestimo" data-roles="admin,coordenador,agente,supervisor_seguranca" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('emprestimo')">Empréstimos</button>
+                    <button id="tab-btn-equipamentos" data-roles="admin,coordenador,agente,supervisor_seguranca,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50" onclick="showTab('equipamentos')">Empréstimo de Equip.</button>
+                    <button id="tab-btn-stores" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('stores')">Gerenciar Lojas</button>
+                    <button id="tab-btn-reports" data-roles="admin,coordenador,agente,supervisor_seguranca,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('reports')">Relatórios e Ocorrências</button>
+                    <button id="tab-btn-almoxarifado" data-roles="admin,coordenador,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('almoxarifado')">Almoxarifado</button>
+                    <button id="tab-btn-chaves" data-roles="admin,coordenador,agente,supervisor_seguranca,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('chaves')">Gestão de Chaves</button>
+                    <button id="tab-btn-notas" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('notas')">Gestão de Notas e Despesas</button>
+                    <button id="tab-btn-dashboard" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('dashboard')">Dashboard</button>
+                    <button id="tab-btn-timeline" data-roles="admin,coordenador,manutencao,servicos_gerais,supervisor_seguranca" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('timeline')">Últimas Atividades</button> 
+                    <button id="tab-btn-users" data-roles="admin,coordenador,manutencao,servicos_gerais" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('users')">Gestão de Usuários</button> 
+                    <button id="tab-btn-audit-admin" data-roles="admin" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('audit-admin')">Auditoria Administrativa</button>
+                    <button id="tab-btn-portal-control" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('portal-control')">Portal Admin</button>
+                    <button id="tab-btn-portal-lojas" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('portal-lojas')">Portal Lojas</button>
+                    <button id="tab-btn-passwords" data-roles="admin,coordenador" class="tab-button w-full text-left block py-3 px-4 text-sm text-slate-300 hover:bg-slate-700/50 hidden" onclick="showTab('passwords')">Gestão de Senhas</button>
+                </nav>
+            </div>
+            
+            <div id="statusMessage" class="hidden p-4 mb-4 text-sm rounded-lg" role="alert"></div>
+
+            <div id="tab-inicio" class="fade-in space-y-8">
+                <!-- Seção Home via JS -->
+            </div>
+
+            <div id="tab-chat" class="hidden fade-in flex flex-col h-full">
+                <!-- Seção Chat via JS -->
+            </div>
+
+            <div id="tab-my-os" class="hidden fade-in">
+                <!-- Seção My OS via JS -->
+            </div>
+
+            <div id="tab-control" class="hidden fade-in">
+                <!-- Seção Carga e Descarga via JS -->
+            </div>
+
+            <div id="tab-providers" class="hidden fade-in">
+                <!-- Seção Prestadores via JS -->
+            </div>
+
+            <div id="tab-approve-os" class="hidden fade-in">
+                <!-- Seção Aprovação OS via JS -->
+            </div>
+
+            <div id="tab-collaborators" class="hidden fade-in">
+                <!-- Seção Colaboradores via JS -->
+            </div>
+
+            <div id="tab-qr-reader" class="hidden fade-in">
+                <!-- Seção QR Reader via JS -->
+            </div>
+
+            <div id="tab-rondas" class="hidden fade-in">
+                <!-- Seção Rondas via JS -->
+            </div>
+
+            <div id="tab-plantao" class="hidden fade-in">
+                <!-- Seção Plantão via JS -->
+            </div>
+
+            <div id="tab-emprestimo" class="hidden fade-in">
+                <!-- Seção Empréstimos via JS -->
+            </div>
+
+            <div id="tab-equipamentos" class="hidden fade-in">
+                <!-- Seção Equipamentos via JS -->
+            </div>
+
+            <div id="tab-stores" class="hidden fade-in">
+                <!-- Seção Lojas via JS -->
+            </div>
+
+            <div id="tab-reports" class="hidden fade-in">
+                <!-- Seção Relatórios via JS -->
+            </div>
+
+            <div id="tab-almoxarifado" class="hidden fade-in">
+                <!-- Seção Almoxarifado via JS -->
+            </div>
+
+            <div id="tab-chaves" class="hidden fade-in">
+                <!-- Seção Chaves via JS -->
+            </div>
+
+            <div id="tab-notas" class="hidden fade-in">
+                <!-- Seção Notas via JS -->
+            </div>
+
+            <div id="tab-dashboard" class="hidden fade-in">
+                <!-- Seção Dashboard via JS -->
+            </div>
+
+            <div id="tab-timeline" class="hidden fade-in">
+                <!-- Seção Timeline via JS -->
+            </div>
+
+            <div id="tab-users" class="hidden fade-in">
+                <!-- Seção Usuários via JS -->
+            </div>
+
+            <div id="tab-passwords" class="hidden fade-in">
+                <!-- Seção Senhas via JS -->
+            </div>
+
+            <div id="tab-portal-control" class="hidden fade-in">
+                <!-- Seção Portal Control via JS -->
+            </div>
+
+            <div id="tab-portal-lojas" class="hidden fade-in">
+                <!-- Seção Portal Lojas via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modais -->
+    <div id="loading-overlay" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-md grid place-items-center z-[200]">
+        <div class="text-center">
+            <div class="loader mx-auto mb-4"></div>
+            <p id="loading-text" class="text-white font-medium">Carregando...</p>
+        </div>
+    </div>
+
+    <div id="password-prompt-overlay" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-xl grid place-items-center z-[150]">
+        <div class="w-full max-w-sm p-8 space-y-6">
+            <h2 class="text-3xl font-bold text-center text-white">Acesso Restrito</h2>
+            <p class="text-center text-slate-400">Insira a senha da seção para continuar.</p>
+            <form id="password-prompt-form" class="space-y-4" onsubmit="window.verifySectionPassword(event)">
+                <input id="password-prompt-input" type="password" required placeholder="Senha" class="w-full p-4 bg-slate-800 border border-slate-700 rounded-xl text-center text-2xl tracking-widest text-white focus:ring-2 focus:ring-cyan-500">
+                <p id="password-prompt-error" class="hidden text-center text-red-400 text-sm">Senha incorreta.</p>
+                <div class="flex gap-4">
+                    <button type="button" onclick="document.getElementById('password-prompt-overlay').classList.add('hidden')" class="w-full py-3 text-slate-400 font-bold">Cancelar</button>
+                    <button type="submit" class="w-full py-3 bg-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20">Desbloquear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="generic-confirm-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm grid place-items-center z-[100]">
+        <div class="w-full max-w-sm p-8 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl shadow-black/50 relative flex flex-col max-h-[90dvh] fade-in">
+            <div class="text-center overflow-y-auto custom-scrollbar flex-grow p-1">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100/10 mb-4 flex-shrink-0">
+                    <svg class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h2 id="confirm-modal-title" class="text-xl font-bold text-white">Confirmação</h2>
+                <p id="confirm-modal-message" class="text-sm text-slate-400 mt-2 break-words">Tem certeza que deseja realizar esta ação?</p>
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button type="button" id="confirm-modal-cancel" class="w-full py-2 text-slate-300 font-semibold bg-slate-600/50 rounded-md hover:bg-slate-600 transition-colors min-h-[48px]">Cancelar</button>
+                <button type="button" id="confirm-modal-confirm" class="w-full py-2 text-white font-semibold bg-red-600 rounded-md hover:bg-red-500 transition-colors shadow-lg shadow-red-500/20 min-h-[48px]">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="generic-prompt-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm grid place-items-center z-[100]">
+        <div class="w-full max-w-sm p-8 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl shadow-black/50 relative flex flex-col max-h-[90dvh] fade-in">
+            <h2 id="prompt-modal-title" class="text-xl font-bold text-center text-white mb-2">Entrada de Dados</h2>
+            <p id="prompt-modal-message" class="text-sm text-center text-slate-400 mb-6 break-words">Por favor, insira as informações solicitadas.</p>
+            <form id="generic-prompt-form" class="flex flex-col flex-grow">
+                <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1">
+                    <input id="prompt-modal-input" type="text" required class="w-full p-3 bg-slate-900/50 border border-slate-700 rounded-md text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50">
+                </div>
+                <div class="flex gap-4 pt-4 mt-2 border-t border-slate-700">
+                    <button type="button" id="prompt-modal-cancel" class="w-full py-2 text-slate-300 font-semibold bg-slate-600/50 rounded-md hover:bg-slate-600 transition-colors min-h-[48px]">Cancelar</button>
+                    <button type="submit" class="w-full py-2 text-white font-semibold bg-cyan-600 rounded-md hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-500/20 min-h-[48px]">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-user-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-[120]"> 
+        <div class="w-full max-w-md p-6 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl relative fade-in max-h-[90dvh] flex flex-col"> 
+            <button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button> 
+            <h2 class="text-2xl font-bold text-white mb-2">Editar Usuário</h2> 
+            <form id="edit-user-form" class="flex flex-col flex-grow min-h-0" onsubmit="handleEditUserSubmit(event)"> 
+                <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
+                    <input type="hidden" id="edit-user-id"> 
+                    <div><label class="block text-sm text-slate-400">Nome</label><input type="text" id="edit-user-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div>
+                    <div><label class="block text-sm text-slate-400">Perfil</label><select id="edit-user-role" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></select></div>
+                    <div id="edit-user-store-container" class="hidden"><label class="block text-sm text-slate-400">Loja</label><select id="edit-user-store" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></select></div>
+                    <div class="border-t border-slate-700 pt-4"><label class="block text-sm text-slate-400 mb-2">Permissões</label><div class="grid grid-cols-2 gap-2" id="edit-user-permissions">
+                        <label class="flex items-center gap-2"><input type="checkbox" value="inicio" checked disabled> Início</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" value="chat"> Mensagens</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" value="control"> Carga e Descarga</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" value="chaves"> Chaves</label>
+                        <!-- Mais permissões aqui -->
+                    </div></div>
+                </div>
+                <div class="flex gap-4 mt-4"><button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="w-full py-2 bg-slate-700 text-white rounded">Cancelar</button><button type="submit" class="w-full py-2 bg-cyan-600 text-white rounded font-bold">Salvar</button></div>
+            </form> 
+        </div> 
+    </div>
+
+    <div id="modal-emprestimo-chave" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-[120]"> 
+        <div class="w-full max-w-md p-6 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl relative fade-in flex flex-col"> 
+            <button type="button" onclick="document.getElementById('modal-emprestimo-chave').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-3xl">&times;</button> 
+            <h2 class="text-2xl font-bold text-white mb-2">Emprestar Chave</h2> 
+            <p id="emprestimo-chave-info" class="text-slate-400 text-sm mb-4"></p> 
+            <form id="form-emprestimo-chave" class="flex flex-col flex-grow min-h-0" onsubmit="handleEmprestimoSubmit(event)"> 
+                <input type="hidden" id="emprestimo-chave-id"> 
+                <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
+                    <div><label class="block text-sm text-slate-400">Responsável</label><input type="text" id="emprestimo-chave-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
+                    <div><label class="block text-sm text-slate-400">Assinatura</label><div class="border border-slate-600 rounded-md bg-white overflow-hidden relative"><canvas id="signature-pad" class="w-full h-40"></canvas><button type="button" onclick="limparAssinatura()" class="absolute top-2 right-2 bg-slate-200 text-slate-700 text-xs px-2 py-1 rounded">Limpar</button></div></div> 
+                </div> 
+                <button type="submit" class="w-full py-3 bg-cyan-600 text-white font-bold rounded-lg mt-4 shadow-lg">Confirmar</button> 
+            </form> 
+        </div> 
+    </div>
+
+    <div id="add-user-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm grid place-items-center z-[120]"> 
+        <div class="w-full max-w-md p-6 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl relative fade-in max-h-[90dvh] flex flex-col"> 
+            <button type="button" onclick="document.getElementById('add-user-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button> 
+            <h2 class="text-2xl font-bold text-white mb-2">Novo Usuário</h2> 
+            <form id="add-user-form" class="flex flex-col flex-grow min-h-0" onsubmit="handleAddUserSubmit(event)"> 
+                <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
+                    <div><label class="block text-sm text-slate-400">Nome</label><input type="text" id="add-user-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
+                    <div><label class="block text-sm text-slate-400">Email</label><input type="email" id="add-user-email" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
+                    <div><label class="block text-sm text-slate-400">Senha</label><input type="text" id="add-user-password" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
+                    <div><label class="block text-sm text-slate-400">Perfil</label><select id="add-user-role" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></select></div> 
+                    <div id="add-user-store-container"><label class="block text-sm text-slate-400">Loja</label><select id="add-user-store" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></select></div> 
+                    <div class="border-t border-slate-700 pt-4"><label class="block text-sm text-slate-400 mb-2">Permissões</label><div class="grid grid-cols-2 gap-2" id="add-user-permissions">
+                        <label class="flex items-center gap-2"><input type="checkbox" value="inicio" checked disabled> Início</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" value="chat"> Mensagens</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" value="control"> Carga e Descarga</label>
+                    </div></div>
+                </div>
+                <div class="flex gap-4 mt-4"><button type="button" onclick="document.getElementById('add-user-modal').classList.add('hidden')" class="w-full py-2 bg-slate-700 text-white rounded">Cancelar</button><button type="submit" class="w-full py-2 bg-green-600 text-white rounded font-bold">Criar Conta</button></div>
+            </form> 
+        </div> 
+    </div>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>

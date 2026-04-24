@@ -7,10 +7,72 @@ import {
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { showStatusMessage, setupUIForRole, showTab } from './ui.js';
 
+function setupAuthUIHandlers() {
+    const loginFormContainer = document.getElementById('login-form-container');
+    const resetFormContainer = document.getElementById('reset-form-container');
+
+    const showLogin = () => {
+        resetFormContainer?.classList.add('hidden');
+        loginFormContainer?.classList.remove('hidden');
+    };
+
+    const showReset = () => {
+        loginFormContainer?.classList.add('hidden');
+        resetFormContainer?.classList.remove('hidden');
+    };
+
+    document.getElementById('show-reset')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showReset();
+    });
+
+    document.getElementById('back-to-login')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showLogin();
+    });
+
+    document.getElementById('back-arrow-reset')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        showLogin();
+    });
+
+    const loginForm = document.getElementById('login-form');
+    if (loginForm && !loginForm.dataset.bound) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = String(document.getElementById('login-email')?.value || '').trim();
+            const password = String(document.getElementById('login-password')?.value || '');
+            if (!email || !password) {
+                showStatusMessage('Preencha email e senha.', 'error', 'auth');
+                return;
+            }
+            await login(email, password);
+        });
+        loginForm.dataset.bound = '1';
+    }
+
+    const resetForm = document.getElementById('reset-form');
+    if (resetForm && !resetForm.dataset.bound) {
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = String(document.getElementById('reset-email')?.value || '').trim();
+            if (!email) {
+                showStatusMessage('Informe o email.', 'error', 'auth');
+                return;
+            }
+            const ok = await resetPassword(email);
+            if (ok) showLogin();
+        });
+        resetForm.dataset.bound = '1';
+    }
+}
+
 export function initAuth() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const authContainer = document.getElementById('auth-container');
     const mainAppContainer = document.getElementById('main-app-container');
+
+    setupAuthUIHandlers();
 
     onAuthStateChanged(auth, async (user) => {
         loadingOverlay.classList.remove('hidden');

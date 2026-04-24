@@ -182,7 +182,7 @@
                 <div id="authStatusMessage" class="hidden p-4 mb-4 text-sm rounded-lg" role="alert"></div>
                 <div id="login-form-container">
                     <h2 class="text-3xl font-bold text-center text-white">Bem-vindo(a)</h2>
-                    <form id="login-form" class="mt-6 space-y-4" onsubmit="handleLoginSubmit(event)">
+                    <form id="login-form" class="mt-6 space-y-4">
                         <div>
                             <label for="login-email" class="text-sm font-medium text-slate-400">Email</label>
                             <input id="login-email" type="email" required class="w-full p-3 mt-1 bg-slate-900/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-slate-200">
@@ -204,7 +204,7 @@
                         </button>
                         <h2 class="text-3xl font-bold text-center text-white">Recuperar Senha</h2>
                     </div>
-                    <form id="reset-form" class="mt-6 space-y-4" onsubmit="handleResetSubmit(event)">
+                    <form id="reset-form" class="mt-6 space-y-4">
                         <div>
                             <label for="reset-email" class="text-sm font-medium text-slate-400">Email</label>
                             <input id="reset-email" type="email" required class="w-full p-3 mt-1 bg-slate-900/50 border border-slate-700 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-slate-200">
@@ -378,7 +378,7 @@
         <div class="w-full max-w-sm p-8 space-y-6">
             <h2 class="text-3xl font-bold text-center text-white">Acesso Restrito</h2>
             <p class="text-center text-slate-400">Insira a senha da seção para continuar.</p>
-            <form id="password-prompt-form" class="space-y-4" onsubmit="window.verifySectionPassword(event)">
+            <form id="password-prompt-form" class="space-y-4">
                 <input id="password-prompt-input" type="password" required placeholder="Senha" class="w-full p-4 bg-slate-800 border border-slate-700 rounded-xl text-center text-2xl tracking-widest text-white focus:ring-2 focus:ring-cyan-500">
                 <p id="password-prompt-error" class="hidden text-center text-red-400 text-sm">Senha incorreta.</p>
                 <div class="flex gap-4">
@@ -427,7 +427,7 @@
         <div class="w-full max-w-md p-6 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl relative fade-in max-h-[90dvh] flex flex-col"> 
             <button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button> 
             <h2 class="text-2xl font-bold text-white mb-2">Editar Usuário</h2> 
-            <form id="edit-user-form" class="flex flex-col flex-grow min-h-0" onsubmit="handleEditUserSubmit(event)"> 
+            <form id="edit-user-form" class="flex flex-col flex-grow min-h-0"> 
                 <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
                     <input type="hidden" id="edit-user-id"> 
                     <div><label class="block text-sm text-slate-400">Nome</label><input type="text" id="edit-user-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div>
@@ -451,7 +451,7 @@
             <button type="button" onclick="document.getElementById('modal-emprestimo-chave').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-3xl">&times;</button> 
             <h2 class="text-2xl font-bold text-white mb-2">Emprestar Chave</h2> 
             <p id="emprestimo-chave-info" class="text-slate-400 text-sm mb-4"></p> 
-            <form id="form-emprestimo-chave" class="flex flex-col flex-grow min-h-0" onsubmit="handleEmprestimoSubmit(event)"> 
+            <form id="form-emprestimo-chave" class="flex flex-col flex-grow min-h-0"> 
                 <input type="hidden" id="emprestimo-chave-id"> 
                 <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
                     <div><label class="block text-sm text-slate-400">Responsável</label><input type="text" id="emprestimo-chave-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
@@ -466,7 +466,7 @@
         <div class="w-full max-w-md p-6 bg-slate-800/95 border border-slate-700 rounded-2xl shadow-2xl relative fade-in max-h-[90dvh] flex flex-col"> 
             <button type="button" onclick="document.getElementById('add-user-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button> 
             <h2 class="text-2xl font-bold text-white mb-2">Novo Usuário</h2> 
-            <form id="add-user-form" class="flex flex-col flex-grow min-h-0" onsubmit="handleAddUserSubmit(event)"> 
+            <form id="add-user-form" class="flex flex-col flex-grow min-h-0"> 
                 <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow p-1"> 
                     <div><label class="block text-sm text-slate-400">Nome</label><input type="text" id="add-user-nome" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 
                     <div><label class="block text-sm text-slate-400">Email</label><input type="email" id="add-user-email" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-md text-slate-200"></div> 

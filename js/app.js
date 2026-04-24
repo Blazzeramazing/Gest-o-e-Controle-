@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { auth, db, getPublicPath } from './firebase-config.js';
 import { initAuth, login, logout, resetPassword } from './auth.js';
 import { showTab, displayTab, setupUIForRole, showStatusMessage, showConfirm, showPrompt, renderPaginationControls } from './ui.js';
-import { listenForChaves, setupChavesEventListeners, renderChavesPage, renderChavesHistory, limparAssinatura, registrarEmprestimoChave, registrarDevolucaoChave, excluirChave, handleEmprestimoSubmit } from './chaves.js';
+import { listenForChaves, setupChavesEventListeners, renderChavesPage, renderChavesHistory, limparAssinatura, registrarEmprestimoChave, registrarDevolucaoChave, excluirChave } from './chaves.js';
 import { listenForRondas, listenForAreas, setupRondasEventListeners, renderAreasList, renderRondasHistory, checkActiveRondaUI, loadAreasBaselineDate, applyRondasRoleUI, startRondaScanner, finalizarRonda, printAreaQR, deleteArea, showRondaTimeline } from './rondas.js';
 import { listenForAlmoxarifado, listenForAlmoxMovimentacoes, setupAlmoxEventListeners, renderAlmoxarifado, renderAlmoxMovimentacoes, registrarMovimentacao } from './almoxarifado.js';
 import { listenForEntries, renderActiveEntries, renderVehicleHistoryPage, listenForProviders, renderActiveProviders, renderProviderHistoryPage, setupLogisticaEventListeners } from './logistica.js';
@@ -53,19 +53,12 @@ window.limparAssinatura = limparAssinatura;
 window.registrarEmprestimoChave = registrarEmprestimoChave;
 window.registrarDevolucaoChave = registrarDevolucaoChave;
 window.excluirChave = excluirChave;
-window.handleEmprestimoSubmit = handleEmprestimoSubmit;
 
 // Usuários
 window.openEditUserModal = openEditUserModal;
 window.openAddUserModal = openAddUserModal;
 window.toggleUserBlock = toggleUserBlock;
 window.deleteUser = deleteUser;
-window.handleAddUserSubmit = handleAddUserSubmit;
-window.handleEditUserSubmit = handleEditUserSubmit;
-
-import { handleLoginSubmit, handleResetSubmit } from './auth.js';
-window.handleLoginSubmit = handleLoginSubmit;
-window.handleResetSubmit = handleResetSubmit;
 
 // Configurações e Segurança
 window.verifySectionPassword = verifySectionPassword;
